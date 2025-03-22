@@ -11,36 +11,78 @@ const electricity_meter_controller = {
         }
     },
 
+    // store: async (req, res) => {
+    //     try {
+    //         console.log("📸 Uploaded File Data:", req.file);
+    //         const { user_id, current_meter, price } = req.body;
+    //         let { last_reading } = req.body; // last_reading ကို let နဲ့ ကြေညာပြီး ပြောင်းလဲနိုင်အောင် လုပ်ပါ။
+
+    //         const last_reading_exist = await electricity_meter_schema.findOne({ user_id: user_id });
+
+    //         if (last_reading_exist) {
+    //             // user_id အတွက် last_reading ရှိပြီးသားဆိုရင် နှုတ်ပြီး ပြန်ထည့်ပါ။
+    //             // last_reading = current_meter - last_reading_exist.current_meter;
+    //             last_reading = last_reading_exist.current_meter({updatedAt: - 1});
+    //         }
+    //            // if (!req.file) {
+    //            //     return res.status(400).json({ msg: "Image upload failed! No file received." });
+    //            // }
+    //            // const el_meter_image = req.file.path;
+
+    //         if (!user_id || !current_meter || !last_reading || !price) {
+    //             return res.status(400).json({ msg: "All fields are required" });
+    //         }
+
+    //         const total_meter = current_meter - last_reading;
+    //         const edit_price = total_meter * price;
+
+    //         const meter = await electricity_meter_schema.create({
+    //             user_id,
+    //             current_meter,
+    //             last_reading,
+    //             total_meter,
+    //             edit_price,
+    //             // el_meter_image
+    //         });
+
+    //         return res.status(201).json(meter);
+    //     } catch (error) {
+    //         console.error("🚨 Upload Error:", error);
+    //         return res.status(500).json({ msg: "Error", error: error.message });
+    //     }
+    // },
+
     store: async (req, res) => {
         try {
-            console.log("📸 Uploaded File Data:", req.file);
-            const { user_id, current_meter, last_reading, price } = req.body;
-
-            if (!req.file) {
-                return res.status(400).json({ msg: "Image upload failed! No file received." });
+            console.log(" Uploaded File Data:", req.file);
+            const { user_id, current_meter, price } = req.body;
+            let { last_reading } = req.body;
+    
+            const last_record = await electricity_meter_schema.findOne({ user_id: user_id }).sort({ updatedAt: -1 });
+    
+            if (last_record) {
+                last_reading = last_record.current_meter;
             }
     
-            const el_meter_image = req.file.path; 
-    
-            if (!user_id || !current_meter || !last_reading || !price) { 
+            if (!user_id || !current_meter || !last_reading || !price) {
                 return res.status(400).json({ msg: "All fields are required" });
             }
     
-            const total_meter = last_reading - current_meter;
+            const total_meter = current_meter - last_reading;
             const edit_price = total_meter * price;
     
             const meter = await electricity_meter_schema.create({
                 user_id,
                 current_meter,
                 last_reading,
-                total_meter, 
+                total_meter,
                 edit_price,
-                el_meter_image
+                // el_meter_image
             });
     
             return res.status(201).json(meter);
         } catch (error) {
-            console.error("🚨 Upload Error:", error);
+            console.error(" Upload Error:", error);
             return res.status(500).json({ msg: "Error", error: error.message });
         }
     },

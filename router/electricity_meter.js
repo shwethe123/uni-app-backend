@@ -15,9 +15,9 @@ routers.get('/api/eletricity_meter', electricity_meter_controller.index);
 //     body('price').notEmpty().withMessage("price is required"),
 // ], ErrorMessageHandle, electricity_meter_controller.store);
 
-routers.post('/api/eletricity_meter', upload.single('el_meter_image'), [
+routers.post('/api/eletricity_meter', [
     body('user_id').notEmpty().withMessage("user is required"),
-    body('current_meter').notEmpty().withMessage("current_meter is required"),
+    // body('current_meter').notEmpty().withMessage("current_meter is required"),
     body('last_reading').notEmpty().withMessage("last_reading is required"),
     body('price').notEmpty().withMessage("price is required"),
 ], ErrorMessageHandle, electricity_meter_controller.store);
