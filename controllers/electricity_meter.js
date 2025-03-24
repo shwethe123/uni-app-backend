@@ -1,154 +1,105 @@
-const mongoose = require('mongoose');
-const electricity_meter_schema = require("../model/Electiricity_meter");
+const { Client } = require('pg');
+
+const client = new Client({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "postgres",
+  port: process.env.DB_PORT || 5432,
+  password: process.env.DB_PASSWORD || "shwethe1230",
+  database: process.env.DB_DATABASE || 'mydb'
+});
+
+client.connect();
 
 const electricity_meter_controller = {
     index: async (req, res) => {
         try {
-            const scoreAll = await electricity_meter_schema.find().sort({ updatedAt: -1 });
-            return res.json(scoreAll);
+          const result = await client.query('SELECT * FROM Electricity_meter ORDER BY auto_id DESC');
+          return res.json(result.rows);
         } catch (error) {
-            return res.status(500).json({ msg: 'Error', error: error.message });
+          return res.status(500).json({ msg: 'Error', error: error.message });
         }
-    },
+      },
 
-    // store: async (req, res) => {
-    //     try {
-    //         console.log("📸 Uploaded File Data:", req.file);
-    //         const { user_id, current_meter, price } = req.body;
-    //         let { last_reading } = req.body; // last_reading ကို let နဲ့ ကြေညာပြီး ပြောင်းလဲနိုင်အောင် လုပ်ပါ။
+  store: async (req, res) => {
+    try {
+      const { user_id, current_meter, price } = req.body;
+      let { last_reading } = req.body;
 
-    //         const last_reading_exist = await electricity_meter_schema.findOne({ user_id: user_id });
+      const lastRecordQuery = 'SELECT current_meter FROM Electricity_meter WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1';
+      const lastRecordResult = await client.query(lastRecordQuery, [user_id]);
 
-    //         if (last_reading_exist) {
-    //             // user_id အတွက် last_reading ရှိပြီးသားဆိုရင် နှုတ်ပြီး ပြန်ထည့်ပါ။
-    //             // last_reading = current_meter - last_reading_exist.current_meter;
-    //             last_reading = last_reading_exist.current_meter({updatedAt: - 1});
-    //         }
-    //            // if (!req.file) {
-    //            //     return res.status(400).json({ msg: "Image upload failed! No file received." });
-    //            // }
-    //            // const el_meter_image = req.file.path;
+      if (lastRecordResult.rows.length > 0) {
+        last_reading = lastRecordResult.rows[0].current_meter;
+      }
 
-    //         if (!user_id || !current_meter || !last_reading || !price) {
-    //             return res.status(400).json({ msg: "All fields are required" });
-    //         }
+      if (!user_id || !current_meter || !last_reading || !price) {
+        return res.status(400).json({ msg: "All fields are required" });
+      }
 
-    //         const total_meter = current_meter - last_reading;
-    //         const edit_price = total_meter * price;
+      const total_meter = current_meter - last_reading;
+      const edit_price = total_meter * price;
 
-    //         const meter = await electricity_meter_schema.create({
-    //             user_id,
-    //             current_meter,
-    //             last_reading,
-    //             total_meter,
-    //             edit_price,
-    //             // el_meter_image
-    //         });
+      const insertQuery = `
+        INSERT INTO Electricity_meter (user_id, current_meter, last_reading, total_meter, edit_price) 
+        VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+      const insertResult = await client.query(insertQuery, [user_id, current_meter, last_reading, total_meter, edit_price]);
 
-    //         return res.status(201).json(meter);
-    //     } catch (error) {
-    //         console.error("🚨 Upload Error:", error);
-    //         return res.status(500).json({ msg: "Error", error: error.message });
-    //     }
-    // },
-
-    store: async (req, res) => {
-        try {
-            console.log(" Uploaded File Data:", req.file);
-            const { user_id, current_meter, price } = req.body;
-            let { last_reading } = req.body;
-    
-            const last_record = await electricity_meter_schema.findOne({ user_id: user_id }).sort({ updatedAt: -1 });
-    
-            if (last_record) {
-                last_reading = last_record.current_meter;
-            }
-    
-            if (!user_id || !current_meter || !last_reading || !price) {
-                return res.status(400).json({ msg: "All fields are required" });
-            }
-    
-            const total_meter = current_meter - last_reading;
-            const edit_price = total_meter * price;
-    
-            const meter = await electricity_meter_schema.create({
-                user_id,
-                current_meter,
-                last_reading,
-                total_meter,
-                edit_price,
-                // el_meter_image
-            });
-    
-            return res.status(201).json(meter);
-        } catch (error) {
-            console.error(" Upload Error:", error);
-            return res.status(500).json({ msg: "Error", error: error.message });
-        }
-    },
-    
-
-    show: async (req, res) => {
-        try {
-            const id = req.params.id;
-            if (!mongoose.Types.ObjectId.isValid(id)) {
-                return res.status(400).json({ msg: 'Invalid ID format' });
-            }
-            const meter_detail = await electricity_meter_schema.findById(id);
-            if (!meter_detail) {
-                return res.status(404).json({ msg: 'Post not found' });
-            }
-
-            return res.json(meter_detail);
-        } catch (error) {
-            return res.status(500).json({ msg: 'Error', error: error.message });
-        }
-    },
-
-    update: async (req, res) => {
-        try {
-            const id = req.params.id;
-            if (!mongoose.Types.ObjectId.isValid(id)) {
-                return res.status(400).json({ msg: 'Invalid ID format' });
-            }
-
-            const { current_meter, last_reading } = req.body;
-
-            if (current_meter !== undefined && last_reading !== undefined) {
-                const total_meter = current_meter - last_reading;
-
-                const meter_update = await electricity_meter_schema.findByIdAndUpdate(id, { 
-                    ...req.body, 
-                    total_meter 
-                }, { new: true });
-
-                return res.json(meter_update);
-            } else {
-
-                const meter_update = await electricity_meter_schema.findByIdAndUpdate(id, { 
-                    ...req.body 
-                }, { new: true });
-
-                return res.json(meter_update);
-            }
-        } catch (error) {
-            return res.status(500).json({ msg: 'Error', error: error.message });
-        }
-    },
-
-    destroy: async (req, res) => { 
-        try {
-            const id = req.params.id;
-            if (!mongoose.Types.ObjectId.isValid(id)) {
-                return res.status(400).json({ msg: 'Invalid ID format' });
-            }
-
-            await electricity_meter_schema.findByIdAndDelete(id);
-            return res.json({ msg: 'Post deleted successfully' });
-        } catch (error) {
-            return res.status(500).json({ msg: 'Error', error: error.message });
-        }
+      return res.status(201).json(insertResult.rows[0]);
+    } catch (error) {
+      console.error("Upload Error:", error);
+      return res.status(500).json({ msg: "Error", error: error.message });
     }
+  },
+
+  show: async (req, res) => {
+    try {
+      const id = req.params.id;
+      const result = await client.query('SELECT * FROM Electricity_meter WHERE id = $1', [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ msg: 'Post not found' });
+      }
+      return res.json(result.rows[0]);
+    } catch (error) {
+      return res.status(500).json({ msg: 'Error', error: error.message });
+    }
+  },
+
+  update: async (req, res) => {
+    try {
+      const id = req.params.id;
+      const { current_meter, last_reading, user_id, price } = req.body;
+      let total_meter = null;
+      let edit_price = null;
+      if (current_meter && last_reading) {
+        total_meter = current_meter - last_reading;
+        edit_price = total_meter * price;
+      }
+
+      const updateQuery = `
+        UPDATE Electricity_meter 
+        SET user_id = $1, current_meter = $2, last_reading = $3, total_meter = $4, edit_price = $5, updated_at = NOW()
+        WHERE id = $6 RETURNING *`;
+      const updateResult = await client.query(updateQuery, [user_id, current_meter, last_reading, total_meter, edit_price, id]);
+
+      if (updateResult.rows.length === 0) {
+        return res.status(404).json({ msg: 'Post not found' });
+      }
+
+      return res.json(updateResult.rows[0]);
+    } catch (error) {
+      return res.status(500).json({ msg: 'Error', error: error.message });
+    }
+  },
+
+  destroy: async (req, res) => {
+    try {
+      const id = req.params.id;
+      await client.query('DELETE FROM Electricity_meter WHERE id = $1', [id]);
+      return res.json({ msg: 'Post deleted successfully' });
+    } catch (error) {
+      return res.status(500).json({ msg: 'Error', error: error.message });
+    }
+  }
 };
 
 module.exports = electricity_meter_controller;

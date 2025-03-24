@@ -1,31 +1,18 @@
-const mongoose = require('mongoose');
-const schema = mongoose.Schema;
+// model/Electiricity_meter.js
+// No longer using mongoose, so this file will contain the SQL for table creation.
 
-const electricity_meter_schema = new schema({
-    user_id: {
-        type: String,
-        required : true
-    },
-    current_meter: {
-        type: String,
-        required : true
-    },
-    last_reading: {
-        type: String,
-        required : true
-    },
-    total_meter: {
-        type: String,
-        required : false
-    },
-    edit_price: {
-        type: Number,
-        required : true
-    },
-    // el_meter_image: {
-    //     type: String,
-    //     default: "https://res.cloudinary.com/dfao1qztg/image/upload/v123456789/default-profile.png"
-    // }
-}, {timestamps: true});
+const createTableQuery = `
+CREATE TABLE "electricity_meter" (
+    auto_id SERIAL PRIMARY KEY,  -- auto-incrementing ID
+    user_id VARCHAR(255) NOT NULL,
+    current_meter VARCHAR(255) NOT NULL,
+    last_reading VARCHAR(255) NOT NULL,
+    total_meter VARCHAR(255),
+    edit_price NUMERIC NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-module.exports = mongoose.model("Electricity_meter", electricity_meter_schema)
+`;
+
+module.exports = { createTableQuery };
