@@ -22,7 +22,7 @@ const electricity_meter_controller = {
 
   store: async (req, res) => {
     try {
-      const { user_id, current_meter, price } = req.body;
+      const { user_id, current_meter, price, user_location } = req.body;
       let { last_reading } = req.body;
 
       const lastRecordQuery = 'SELECT current_meter FROM Electricity_meter WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1';
@@ -32,7 +32,7 @@ const electricity_meter_controller = {
         last_reading = lastRecordResult.rows[0].current_meter;
       }
 
-      if (!user_id || !current_meter || !last_reading || !price) {
+      if (!user_id || !current_meter || !last_reading || !price || !user_location) {
         return res.status(400).json({ msg: "All fields are required" });
       }
 
@@ -40,9 +40,9 @@ const electricity_meter_controller = {
       const edit_price = total_meter * price;
 
       const insertQuery = `
-        INSERT INTO Electricity_meter (user_id, current_meter, last_reading, total_meter, edit_price) 
-        VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-      const insertResult = await client.query(insertQuery, [user_id, current_meter, last_reading, total_meter, edit_price]);
+        INSERT INTO Electricity_meter (user_id, current_meter, last_reading, total_meter, edit_price, user_location) 
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
+      const insertResult = await client.query(insertQuery, [user_id, current_meter, last_reading, total_meter, edit_price, user_location]);
 
       return res.status(201).json(insertResult.rows[0]);
     } catch (error) {
