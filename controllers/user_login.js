@@ -1,7 +1,6 @@
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
 
-
 const client = new Client({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -10,23 +9,51 @@ const client = new Client({
     database: process.env.DB_DATABASE
 });
 
+client.connect();
+
 const user_login_controller = {
-    index: async (req, res) => {
+    login: async (req, res) => {
         try {
-            const result = await client.query('SELECT * FROM user_login_db ORDER BY auto_id DESC');
-            return res.json(result.rows);
+            const { username, password } = req.body;
+            
+            if (!username || !password) {
+                return res.status(400).json({ msg: 'Username and password are required' });
+            }
+            
+            const userQuery = 'SELECT * FROM user_login_db WHERE username = $1';
+            const userResult = await client.query(userQuery, [username]);
+    
+            if (userResult.rows.length === 0) {
+                return res.status(400).json({ msg: 'User not found' });
+            }
+    
+            const user = userResult.rows[0];
+            const isMatch = await bcrypt.compare(password, user.password);
+    
+            if (!isMatch) {
+                return res.status(400).json({ msg: 'Invalid password' });
+            }
+    
+            return res.json({ msg: 'Login successful', user });
         } catch (error) {
             return res.status(500).json({ msg: 'Error', error: error.message });
         }
     },
 
-    store: async (req, res) => {
+    register: async (req, res) => {
         try {
             console.log('Request received:', req.body);
     
             const { username, password } = req.body;
             if (!username || !password) {
                 return res.status(400).json({ msg: 'Username and password are required' });
+            }
+
+            const checkUserQuery = 'SELECT * FROM user_login_db WHERE username = $1';
+            const checkUserResult = await client.query(checkUserQuery, [username]);
+    
+            if (checkUserResult.rows.length > 0) {
+                return res.status(400).json({ msg: 'Username already exists' });
             }
     
             const hashedPassword = await bcrypt.hash(password, 10);
