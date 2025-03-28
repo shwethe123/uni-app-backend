@@ -1,5 +1,6 @@
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+const create_token = require('../helpers/create_token');
 
 const client = new Client({
     host: process.env.DB_HOST,
@@ -15,11 +16,11 @@ const user_login_controller = {
     login: async (req, res) => {
         try {
             const { username, password } = req.body;
-            
+    
             if (!username || !password) {
                 return res.status(400).json({ msg: 'Username and password are required' });
             }
-            
+    
             const userQuery = 'SELECT * FROM user_login_db WHERE username = $1';
             const userResult = await client.query(userQuery, [username]);
     
@@ -34,11 +35,23 @@ const user_login_controller = {
                 return res.status(400).json({ msg: 'Invalid password' });
             }
     
-            return res.json({ msg: 'Login successful', user });
+            
+            const user_id = userResult.rows[0].auto_id; 
+    
+            let token = create_token(user_id);
+    
+            res.cookie('jwt', token, {
+                httpOnly: true, 
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 3 * 24 * 60 * 60 * 1000
+            });
+            
+            return res.json({ msg: 'Login successful', user, token });
         } catch (error) {
             return res.status(500).json({ msg: 'Error', error: error.message });
         }
     },
+    
 
     register: async (req, res) => {
         try {
@@ -48,7 +61,7 @@ const user_login_controller = {
             if (!username || !password) {
                 return res.status(400).json({ msg: 'Username and password are required' });
             }
-
+    
             const checkUserQuery = 'SELECT * FROM user_login_db WHERE username = $1';
             const checkUserResult = await client.query(checkUserQuery, [username]);
     
@@ -71,21 +84,16 @@ const user_login_controller = {
                 return res.status(500).json({ msg: 'Failed to insert data' });
             }
     
-            return res.json(insertResult.rows[0]);
+            const user_id = insertResult.rows[0].auto_id;
+    
+            let token = create_token(user_id);
+            res.cookie('jwt', token);
+            return res.status(201).json({ user_id, token, msg: 'User created successfully' });
         } catch (error) {
             console.error('Error during insert:', error);
             return res.status(500).json({ msg: 'Error', error: error.message });
         }
     },
-
-    show : async (req, res) => {
-        try {
-            return res.json({msg: 'show each user details'});
-        } catch (error) {
-            return res.status(500).json({msg: "error", error: error.message});
-        }
-    }
-    
 };
 
 module.exports = user_login_controller;

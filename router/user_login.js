@@ -11,5 +11,9 @@ router.post('/api/user_login',
     ErrorHandel, user_login_controller.login);
 
 router.post('/api/user_register', user_login_controller.register);
+// router.post('/api/user_register', (req, res) => {
+//     res.cookie('name', 'salai chai naing')
+//     return res.send('cookie already set')
+// });
 
 module.exports = router;

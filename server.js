@@ -6,12 +6,19 @@ const Eletricity_meter = require('./router/electricity_meter');
 const User_location = require('./router/user_location_id');
 const User_login = require('./router/user_login');
 const { Client } = require('pg');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
 app.use(morgan('dev'));
-app.use(cors());
+app.use(cors(
+  {
+    origin : "http://localhost:5173",
+    credentials : true
+  }
+));
 app.use(express.json());
+app.use(cookieParser());
 
 const client = new Client({
   host: process.env.DB_HOST || "localhost",
