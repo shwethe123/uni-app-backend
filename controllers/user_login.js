@@ -35,10 +35,11 @@ const user_login_controller = {
                 return res.status(400).json({ msg: 'Invalid password' });
             }
     
-            
-            const user_id = userResult.rows[0].auto_id; 
+            const user_id = user.auto_id; 
+            const userRole = user.role; 
+            console.log(userRole);
     
-            let token = create_token(user_id);
+            let token = create_token(user_id, userRole);
     
             res.cookie('jwt', token, {
                 httpOnly: true, 
