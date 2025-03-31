@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const Eletricity_meter = require('./router/electricity_meter');
 const User_location = require('./router/user_location_id');
 const User_login = require('./router/user_login');
+const User_id = require('./router/user_id_file/user_id');
 const { Client } = require('pg');
 const cookieParser = require('cookie-parser');
 
@@ -40,3 +41,4 @@ client.connect()
 app.use(Eletricity_meter);
 app.use(User_location);
 app.use(User_login);
+app.use(User_id);

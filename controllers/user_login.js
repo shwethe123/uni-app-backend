@@ -38,7 +38,7 @@ const user_login_controller = {
             const user_id = user.auto_id; 
             const userRole = user.role; 
             console.log(userRole);
-    
+       
             let token = create_token(user_id, userRole);
     
             res.cookie('jwt', token, {
@@ -53,7 +53,6 @@ const user_login_controller = {
         }
     },
     
-
     register: async (req, res) => {
         try {
             console.log('Request received:', req.body);
