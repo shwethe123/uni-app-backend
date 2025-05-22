@@ -22,8 +22,8 @@ const electricity_meter_controller = {
 
   store: async (req, res) => {
     try {
-      const { user_id, current_meter, price, user_location } = req.body;
-      let { last_reading } = req.body;
+      const { user_id, current_meter, price, user_location, parene_id,last_reading } = req.body;
+      // let { last_reading } = req.body;
 
       const lastRecordQuery = 'SELECT current_meter FROM Electricity_meter WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1';
       const lastRecordResult = await client.query(lastRecordQuery, [user_id]);
@@ -40,9 +40,9 @@ const electricity_meter_controller = {
       const edit_price = total_meter * price;
 
       const insertQuery = `
-        INSERT INTO Electricity_meter (user_id, current_meter, last_reading, total_meter, edit_price, user_location) 
+        INSERT INTO Electricity_meter (user_id, current_meter, last_reading, total_meter, edit_price, user_location, parene_id) 
         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
-      const insertResult = await client.query(insertQuery, [user_id, current_meter, last_reading, total_meter, edit_price, user_location]);
+      const insertResult = await client.query(insertQuery, [user_id, current_meter, last_reading, total_meter, edit_price, user_location, parene_id]);
 
       return res.status(201).json(insertResult.rows[0]);
     } catch (error) {
